@@ -1,33 +1,35 @@
-
 import { NextResponse } from "next/server";
-import { Configuration,OpenAIApi } from "openai";
 
+const { Configuration, OpenAIApi } = require("openai");
 
 const configuration = new Configuration({
-    apiKey:process.env.OPENAI_API_KEY
+    // organization: "org-TXN8XsRwRDeXusnqtedReVNO",
+    apiKey: process.env.OPENAI_API_KEY,
+
 });
-
 const openai = new OpenAIApi(configuration);
-
+// const response = await openai.listModels();
+// console.log(process.env.OPENAI_API_KEY)
 
 export async function POST(req) {
-    const prompt = req.body.messagebox;
-   
-    
 
-    if(!prompt ||prompt===""){
-        return NextResponse.json({message:"please send your prompt"},{status:400})
+    try {
+
+        const { prompt } = await req.json()
+        const completion = await openai.createChatCompletion({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: `${prompt}` }],
+            max_tokens: 100,
+            temperature: 0.7,
+        });
+
+        const data = completion.data.choices[0].message;
+        return NextResponse.json({ data })
+
+    } catch (error) {
+
+        console.log(error);
+
     }
 
-    const result = await openai.createCompletion({
-        model:'text-davnci-003',
-        prompt:`${prompt}`,
-        temperature:0.9,
-        max_tokens:2048,
-        frequency_penalty:0.5,
-        presence_penalty:0
-    })
-
-    const response = result.data.choices[0].text?.trim() || 'Sorry there was a problem!';
-    return NextResponse.json({text:response},{status:200})
 }
